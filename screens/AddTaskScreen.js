@@ -12,9 +12,13 @@ import TaskCard from '../components/TaskCard';
 export default function AddTaskScreen() {
   const [taskText, setTaskText] = useState('');
   const [tasks, setTasks] = useState([]);
+  const [errorMessage, setErrorMessage] = useState('');
 
   function handleAddTask() {
-    if (taskText.trim() === '') return;
+    if (taskText.trim() === '') {
+      setErrorMessage('Please type a task before adding it.');
+      return;
+    }
 
     const newTask = {
       id: Date.now().toString(),
@@ -24,6 +28,7 @@ export default function AddTaskScreen() {
 
     setTasks([...tasks, newTask]);
     setTaskText('');
+    setErrorMessage('');
   }
 
   function handleToggleTask(id) {
@@ -47,7 +52,17 @@ export default function AddTaskScreen() {
         onChangeText={setTaskText}
       />
 
+      {errorMessage !== '' && (
+        <Text style={styles.error}>{errorMessage}</Text>
+      )}
+
       <Button title="Add Task" onPress={handleAddTask} />
+
+      {tasks.length > 0 && tasks.every((t) => t.done) && (
+        <Text style={styles.celebration}>
+          🎉 All done! Great work!
+        </Text>
+      )}
 
       <FlatList
         data={tasks}
@@ -60,6 +75,14 @@ export default function AddTaskScreen() {
           />
         )}
         style={styles.list}
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            No tasks yet — add one above! 👆
+          </Text>
+        }
+        ItemSeparatorComponent={() => (
+          <View style={styles.separator} />
+        )}
       />
     </View>
   );
@@ -87,7 +110,30 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
+  error: {
+    color: '#B23A48',
+    marginBottom: 10,
+  },
+
+  celebration: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1E8A7A',
+    textAlign: 'center',
+    marginVertical: 12,
+  },
+
   list: {
     marginTop: 16,
+  },
+
+  empty: {
+    textAlign: 'center',
+    color: '#6B7280',
+    marginTop: 24,
+  },
+
+  separator: {
+    height: 8,
   },
 });
