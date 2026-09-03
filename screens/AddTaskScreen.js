@@ -16,7 +16,13 @@ export default function AddTaskScreen() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load saved tasks when the screen opens
+  const [quote, setQuote] = useState(
+    "Loading today's motivation..."
+  );
+
+  // =========================
+  // LAB 8 - LOAD SAVED TASKS
+  // =========================
   useEffect(() => {
     const loadTasks = async () => {
       try {
@@ -35,13 +41,18 @@ export default function AddTaskScreen() {
     loadTasks();
   }, []);
 
-  // Save tasks whenever they change
+  // =========================
+  // LAB 8 - SAVE TASKS
+  // =========================
   useEffect(() => {
     if (!isLoaded) return;
 
     const saveTasks = async () => {
       try {
-        await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
+        await AsyncStorage.setItem(
+          'tasks',
+          JSON.stringify(tasks)
+        );
       } catch (error) {
         console.error('Failed to save tasks:', error);
       }
@@ -50,9 +61,40 @@ export default function AddTaskScreen() {
     saveTasks();
   }, [tasks, isLoaded]);
 
+  // =========================
+  // LAB 9 - GET QUOTE
+  // =========================
+  useEffect(() => {
+    fetch('https://api.quotable.io/random')
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(
+            `HTTP error! Status: ${response.status}`
+          );
+        }
+
+        return response.json();
+      })
+      .then((data) => {
+        setQuote(data.content);
+      })
+      .catch((error) => {
+        console.error('API ERROR:', error);
+
+        setQuote(
+          'Believe in yourself and get it done!'
+        );
+      });
+  }, []);
+
+  // =========================
+  // ADD TASK
+  // =========================
   function handleAddTask() {
     if (taskText.trim() === '') {
-      setErrorMessage('Please type a task before adding it.');
+      setErrorMessage(
+        'Please type a task before adding it.'
+      );
       return;
     }
 
@@ -67,20 +109,68 @@ export default function AddTaskScreen() {
     setErrorMessage('');
   }
 
+  // =========================
+  // TOGGLE TASK
+  // =========================
   function handleToggleTask(id) {
     setTasks(
       tasks.map((t) =>
-        t.id === id ? { ...t, done: !t.done } : t
+        t.id === id
+          ? { ...t, done: !t.done }
+          : t
       )
     );
   }
 
+  // =========================
+  // LAB 9 - NEW QUOTE
+  // =========================
+  function getNewQuote() {
+    setQuote('Loading new quote...');
+
+    fetch('https://api.quotable.io/random')
+      .then((response) => {
+        console.log(
+          'API response status:',
+          response.status
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `HTTP error! Status: ${response.status}`
+          );
+        }
+
+        return response.json();
+      })
+      .then((data) => {
+        console.log('API data:', data);
+
+        setQuote(data.content);
+      })
+      .catch((error) => {
+        console.error('API ERROR:', error);
+
+        setQuote(
+          'Believe in yourself and get it done!'
+        );
+      });
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Add a Task</Text>
 
-      <Text>You have {tasks.length} task(s)</Text>
+      {/* TITLE */}
+      <Text style={styles.heading}>
+        Add a Task
+      </Text>
 
+      {/* TASK COUNT */}
+      <Text>
+        You have {tasks.length} task(s)
+      </Text>
+
+      {/* INPUT */}
       <TextInput
         style={styles.input}
         placeholder="What do you need to do?"
@@ -88,34 +178,61 @@ export default function AddTaskScreen() {
         onChangeText={setTaskText}
       />
 
+      {/* VALIDATION ERROR */}
       {errorMessage !== '' && (
-        <Text style={styles.error}>{errorMessage}</Text>
-      )}
-
-      <Button title="Add Task" onPress={handleAddTask} />
-
-      {tasks.length > 0 && tasks.every((t) => t.done) && (
-        <Text style={styles.celebration}>
-          🎉 All done! Great work!
+        <Text style={styles.error}>
+          {errorMessage}
         </Text>
       )}
 
+      {/* ADD TASK BUTTON */}
+      <Button
+        title="Add Task"
+        onPress={handleAddTask}
+      />
+
+      {/* MOTIVATIONAL QUOTE */}
+      <Text style={styles.quote}>
+        💬 {quote}
+      </Text>
+
+      {/* NEW QUOTE BUTTON */}
+      <Button
+        title="New Quote"
+        onPress={getNewQuote}
+      />
+
+      {/* CELEBRATION MESSAGE */}
+      {tasks.length > 0 &&
+        tasks.every((t) => t.done) && (
+          <Text style={styles.celebration}>
+            🎉 All done! Great work!
+          </Text>
+        )}
+
+      {/* TASK LIST */}
       <FlatList
         data={tasks}
         keyExtractor={(item) => item.id}
+
         renderItem={({ item }) => (
           <TaskCard
             title={item.title}
             done={item.done}
-            onToggle={() => handleToggleTask(item.id)}
+            onToggle={() =>
+              handleToggleTask(item.id)
+            }
           />
         )}
+
         style={styles.list}
+
         ListEmptyComponent={
           <Text style={styles.empty}>
             No tasks yet — add one above! 👆
           </Text>
         }
+
         ItemSeparatorComponent={() => (
           <View style={styles.separator} />
         )}
@@ -149,6 +266,13 @@ const styles = StyleSheet.create({
   error: {
     color: '#B23A48',
     marginBottom: 10,
+  },
+
+  quote: {
+    fontStyle: 'italic',
+    color: '#6B7280',
+    marginBottom: 16,
+    textAlign: 'center',
   },
 
   celebration: {
